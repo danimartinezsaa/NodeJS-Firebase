@@ -17,41 +17,47 @@ var db = admin.database();
 var ref = db.ref("/");
 var resultado = null;
 
+
+//Listener Base de datos
 ref.on("value", function(snapshot) {
-    console.log("dentro de la funcion:" + snapshot.val());
-    resultado = snapshot.val();
-    
-    for(var elemento in resultado) {
-        let consulta=elemento;
-        console.log(consulta);
-        
-    }
+
+    resultado = snapshot;
 
 }, function(errorObject) {
     console.log("The read failed: " + errorObject.code);
 });
 
+
 //especificamos el subdirectorio donde se encuentran las páginas estáticas
-app.use(express.static(__dirname + '/html'));
+//app.use(express.static(__dirname + '/html'));
 
 //extended: false significa que parsea solo string (no archivos de imagenes por ejemplo)
 app.use(bodyParser.urlencoded({ extended: false }));
 
 //Post Method
 app.post('/enviar', (req, res) => {
-    let token = req.body.token;
-    let msg = req.body.msg;
+    let token=req.body.confirmado
+    let usuario=req.body.usuario
     let pagina = '<!doctype html><html><head></head><body>';
-    pagina += `<p>(${token}/${msg}) Enviado </p>`;
+    pagina += '<p>'+usuario+' Confirmado </p>';
     pagina += '</body></html>';
+    
+    let pedido=db.ref("/")
+    let modificacion=pedido.child(token);
+    modificacion.set({
+        "confirmado": "true"
+    });
     
     var registrationToken = token;
 
     // Creamos el cuerpo de la notificación
     var message = {
+        data:{
+          "msg":"Ya puedes venir al bar!"
+        },
         notification:{
-            "title":"Notificación desde NodeJS",
-            "body": msg
+            "title":"Pedido Confirmado",
+            "body": "Ya puedes venir al bar!"
         },
         token: registrationToken
     };
@@ -70,12 +76,32 @@ app.post('/enviar', (req, res) => {
     res.send(pagina);
 });
 
+
+
 //Get Method
-app.get('/mostrar', (req, res) => {
+app.get('/', (req, res) => {
     let pagina = '<!doctype html><html><head></head><body>';
-    pagina += 'Muestro<br>';
-    pagina += '<div id="resultado">' + resultado + '</div>'
-    pagina += '<p>...</p>';
+    pagina += '<h1>Pedidos</h1>';
+    
+    resultado.forEach(function(data) {
+        console.log(data.key + "Tiene un pedido. Confirmado: " + data.val().confirmado);
+        let usuario=data.val().usuario
+        pagina += '<form action="/enviar" method="post">';
+        pagina += '<h3>'+usuario+'</h3>';
+        pagina += '<ul>';
+        pagina += '<li> Café con leche:'+data.val().cafeleche+'</li>';
+        pagina += '<li> Café solo largo:'+data.val().cafesololargo+'</li>';
+        pagina += '<li> Croissant: '+data.val().croissant+'</li>';
+        pagina += '<li> Tortilla: '+data.val().tortilla+'</li>';
+        pagina += '<li> Tostada: '+data.val().tostada+'</li>';
+        pagina += '<li style="color:red">Confirmado: '+data.val().confirmado+'</li>';
+        pagina += '</ul>';
+        pagina += '<input type="hidden" name="confirmado" value='+data.key+'>';
+        pagina += '<input type="hidden" name="usuario" value='+usuario+'>';
+        pagina += '<button type="submit">Confirmar</button>';
+        pagina += '</form>';
+    });
+
     pagina += '</body></html>';
     res.send(pagina);
 });
