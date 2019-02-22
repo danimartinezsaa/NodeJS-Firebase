@@ -27,8 +27,12 @@ ref.on("value", function(snapshot) {
     console.log("The read failed: " + errorObject.code);
 });
 
+//especificamos el subdirectorio donde se encuentran las páginas estáticas
+app.use(express.static(__dirname + '/html'));
+
 //extended: false significa que parsea solo string (no archivos de imagenes por ejemplo)
 app.use(bodyParser.urlencoded({ extended: false }));
+
 
 
 //Post Method
@@ -98,7 +102,7 @@ app.post('/enviar', (req, res) => {
 
 //Get Method
 app.get('/', (req, res) => {
-    let pagina = '<!doctype html><html><head></head><body>';
+    let pagina = '<!doctype html><html><head><link rel="stylesheet" type="text/css" href="estilo.css"></head><body>';
     pagina += '<h1>Pedidos</h1>';
     
     //Listamos los pedidos
@@ -106,15 +110,14 @@ app.get('/', (req, res) => {
         console.log(data.key + "Tiene un pedido. Confirmado: " + data.val().confirmado);
         let usuario=data.val().usuario
         pagina += '<form action="/enviar" method="post">';
-        pagina += '<h3>'+usuario+'</h3>';
-        pagina += '<ul>';
+        pagina += '<div id="lista"><ul><li>'+usuario+'</li>';
         pagina += '<li> Café con leche:'+data.val().cafeleche+'</li>';
         pagina += '<li> Café solo largo:'+data.val().cafesololargo+'</li>';
         pagina += '<li> Croissant: '+data.val().croissant+'</li>';
         pagina += '<li> Tortilla: '+data.val().tortilla+'</li>';
         pagina += '<li> Tostada: '+data.val().tostada+'</li>';
-        pagina += '<li style="color:red">Confirmado: '+data.val().confirmado+'</li>';
-        pagina += '</ul>';
+        pagina += '<li>Confirmado: '+data.val().confirmado+'</li>';
+        pagina += '</ul></div>';
         pagina += '<input type="hidden" name="confirmado" value='+data.key+'>';
         pagina += '<input type="hidden" name="usuario" value='+usuario+'>';
         pagina += '<input type="hidden" name="cafeleche" value='+data.val().cafeleche+'>';
